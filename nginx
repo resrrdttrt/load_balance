@@ -1,0 +1,39 @@
+# Định nghĩa server block, nơi cấu hình cho một virtual server 
+server { 
+    listen 80;  # Cổng mà server sẽ lắng nghe (ở đây là cổng 80 cho HTTP) 
+
+    server_name example.com www.example.com;  # Tên miền mà server này xử lý 
+
+    root /var/www/html;  # Thư mục gốc chứa files cho server 
+
+    index index.html index.htm;  # Tên file index mặc định (file đầu tiên được tìm kiếm) 
+
+    # Cấu hình cho location block 
+    location / { 
+        try_files $uri $uri/ =404;  # Kiểm tra file hoặc thư mục, nếu không tồn tại trả về lỗi 404 
+    } 
+
+    location /my-first-domain {
+        alias /var/www/my-first-domain/html; # when a request is made to the path /my-first-domain, NGINX will map that request to the directory /var/www/my-first-domain/html.
+        try_files $uri $uri/ =404;  # $uri là part of the URL after the domain name (Ex http://34.80.185.201/my-first-domain/index.html thì $uri là /my-first-domain/index.html)
+    }
+
+    # Cấu hình cho một location cụ thể 
+    location /api/ { 
+        proxy_pass http://backend:3000;  # Chuyển tiếp request đến backend service 
+        proxy_set_header Host $host;  # Bảo toàn header Host 
+        proxy_set_header X-Real-IP $remote_addr;  # Thêm địa chỉ IP của client vào header 
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # Thêm địa chỉ IP của client vào header forwarded 
+        proxy_set_header X-Forwarded-Proto $scheme;  # Bảo toàn scheme (http/https) 
+    } 
+
+    # Cấu hình cho các file tĩnh 
+    location ~* \.(jpg|jpeg|png|gif|css|js)$ { 
+        expires 30d;  # Thiết lập thời gian hết hạn cho các file tĩnh 
+        access_log off;  # Tắt log truy cập cho các file tĩnh 
+    } 
+
+    # Cấu hình lỗi 
+    error_page 404 /404.html;  # Chỉ định trang lỗi 404 
+    error_page 500 502 503 504 /50x.html;  # Chỉ định trang lỗi cho các mã lỗi 500 
+} 
